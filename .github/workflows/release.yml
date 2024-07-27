@@ -1,0 +1,13 @@
+name: Go Release
+on:
+  push:
+    # run only against tags
+    tags:
+      - '*'
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.base_ref == 'refs/heads/master'
+    uses: Siroshun09/gh-actions-workflows/.github/workflows/goreleaser-release.yml@v1

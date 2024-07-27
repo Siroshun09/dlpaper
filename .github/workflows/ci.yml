@@ -1,0 +1,25 @@
+name: Go Build
+on: [ push, pull_request ]
+
+jobs:
+  build-ubuntu:
+    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-build.yml@v1
+    with:
+      os: ubuntu-latest
+      package-name: dlpaper-${{ github.run_number }}
+      go-filepath: "./cmd/dlpaper/main.go"
+      output-filepath: "dist/dlpaper"
+  build-macos:
+    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-build.yml@v1
+    with:
+      os: macos-latest
+      package-name: dlpaper-${{ github.run_number }}
+      go-filepath: "./cmd/dlpaper/main.go"
+      output-filepath: "dist/dlpaper"
+  build-windows:
+    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-build.yml@v1
+    with:
+      os: windows-latest
+      package-name: dlpaper-${{ github.run_number }}
+      go-filepath: "./cmd/dlpaper/main.go"
+      output-filepath: "dist/dlpaper.exe"
