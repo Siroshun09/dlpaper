@@ -1,6 +1,6 @@
 module github.com/Sirohun09/dlpaper
 
-go 1.22.5
+go 1.23.3
 
 require github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 
