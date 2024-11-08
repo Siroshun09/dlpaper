@@ -109,7 +109,7 @@ func main() {
 
 	expectedHash, err := hex.DecodeString(*download.Sha256)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to convert the given sha256 hash to bytes", err)
+		slog.ErrorContext(ctx, "Failed to convert the given sha256 hash to bytes", slog.Any("error", err))
 		os.Exit(1)
 		return
 	}
