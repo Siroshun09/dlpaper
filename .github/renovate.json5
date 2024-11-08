@@ -1,22 +1,22 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": [
-        "config:recommended"
+    $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+    extends: [
+        'config:recommended',
     ],
-    "packageRules": [
+    packageRules: [
         {
-            "groupName": "all non-major dependencies for go",
-            "groupSlug": "go-all-minor-patch",
-            "matchManagers": [
-                "gomod"
+            groupName: 'all non-major dependencies for go',
+            groupSlug: 'go-all-minor-patch',
+            matchManagers: [
+                'gomod',
             ],
-            "matchPackagePatterns": [
-                "*"
+            matchUpdateTypes: [
+                'minor',
+                'patch',
             ],
-            "matchUpdateTypes": [
-                "minor",
-                "patch"
-            ]
-        }
-    ]
+            matchPackageNames: [
+                '*',
+            ],
+        },
+    ],
 }
