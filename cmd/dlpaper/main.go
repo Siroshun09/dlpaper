@@ -7,12 +7,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/Sirohun09/dlpaper/api"
-	"github.com/Sirohun09/dlpaper/libs"
 	"io"
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/Sirohun09/dlpaper/api"
+	"github.com/Sirohun09/dlpaper/libs"
 )
 
 func main() {
