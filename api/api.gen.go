@@ -5,124 +5,132 @@ package api
 
 import (
 	"time"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for BuildResponseChannel.
 const (
-	BuildResponseChannelDefault      BuildResponseChannel = "default"
-	BuildResponseChannelExperimental BuildResponseChannel = "experimental"
+	BuildResponseChannelALPHA       BuildResponseChannel = "ALPHA"
+	BuildResponseChannelBETA        BuildResponseChannel = "BETA"
+	BuildResponseChannelRECOMMENDED BuildResponseChannel = "RECOMMENDED"
+	BuildResponseChannelSTABLE      BuildResponseChannel = "STABLE"
 )
 
-// Defines values for VersionBuildChannel.
+// Defines values for SupportStatus.
 const (
-	VersionBuildChannelDefault      VersionBuildChannel = "default"
-	VersionBuildChannelExperimental VersionBuildChannel = "experimental"
+	DEPRECATED  SupportStatus = "DEPRECATED"
+	SUPPORTED   SupportStatus = "SUPPORTED"
+	UNSUPPORTED SupportStatus = "UNSUPPORTED"
 )
 
-// Defines values for VersionFamilyBuildChannel.
+// Defines values for GetBuildsParamsChannel.
 const (
-	Default      VersionFamilyBuildChannel = "default"
-	Experimental VersionFamilyBuildChannel = "experimental"
+	GetBuildsParamsChannelALPHA       GetBuildsParamsChannel = "ALPHA"
+	GetBuildsParamsChannelBETA        GetBuildsParamsChannel = "BETA"
+	GetBuildsParamsChannelRECOMMENDED GetBuildsParamsChannel = "RECOMMENDED"
+	GetBuildsParamsChannelSTABLE      GetBuildsParamsChannel = "STABLE"
 )
 
 // BuildResponse defines model for BuildResponse.
 type BuildResponse struct {
-	Build       *int32                `json:"build,omitempty"`
-	Changes     *[]Change             `json:"changes,omitempty"`
-	Channel     *BuildResponseChannel `json:"channel,omitempty"`
-	Downloads   *map[string]Download  `json:"downloads,omitempty"`
-	ProjectId   *string               `json:"project_id,omitempty"`
-	ProjectName *string               `json:"project_name,omitempty"`
-	Promoted    *bool                 `json:"promoted,omitempty"`
-	Time        *time.Time            `json:"time,omitempty"`
-	Version     *string               `json:"version,omitempty"`
+	Channel   *BuildResponseChannel `json:"channel,omitempty"`
+	Commits   *[]Commit             `json:"commits,omitempty"`
+	Downloads *map[string]Download  `json:"downloads,omitempty"`
+	Id        *int32                `json:"id,omitempty"`
+	Time      *time.Time            `json:"time,omitempty"`
 }
 
 // BuildResponseChannel defines model for BuildResponse.Channel.
 type BuildResponseChannel string
 
-// BuildsResponse defines model for BuildsResponse.
-type BuildsResponse struct {
-	Builds      *[]VersionBuild `json:"builds,omitempty"`
-	ProjectId   *string         `json:"project_id,omitempty"`
-	ProjectName *string         `json:"project_name,omitempty"`
-	Version     *string         `json:"version,omitempty"`
+// Checksums defines model for Checksums.
+type Checksums struct {
+	Sha256 *string `json:"sha256,omitempty"`
 }
 
-// Change defines model for Change.
-type Change struct {
-	Commit  *string `json:"commit,omitempty"`
-	Message *string `json:"message,omitempty"`
-	Summary *string `json:"summary,omitempty"`
+// Commit defines model for Commit.
+type Commit struct {
+	Message *string    `json:"message,omitempty"`
+	Sha     *string    `json:"sha,omitempty"`
+	Time    *time.Time `json:"time,omitempty"`
 }
 
 // Download defines model for Download.
 type Download struct {
-	Name   *string `json:"name,omitempty"`
-	Sha256 *string `json:"sha256,omitempty"`
+	Checksums *Checksums `json:"checksums,omitempty"`
+	Name      *string    `json:"name,omitempty"`
+	Size      *int32     `json:"size,omitempty"`
+	Url       *string    `json:"url,omitempty"`
+}
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Error   *string `json:"error,omitempty"`
+	Message *string `json:"message,omitempty"`
+	Ok      *bool   `json:"ok,omitempty"`
+}
+
+// Java defines model for Java.
+type Java struct {
+	Flags   *JavaFlags   `json:"flags,omitempty"`
+	Version *JavaVersion `json:"version,omitempty"`
+}
+
+// JavaFlags defines model for JavaFlags.
+type JavaFlags struct {
+	Recommended *[]string `json:"recommended,omitempty"`
+}
+
+// JavaVersion defines model for JavaVersion.
+type JavaVersion struct {
+	Minimum *int32 `json:"minimum,omitempty"`
+}
+
+// Project defines model for Project.
+type Project struct {
+	Id   *string `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // ProjectResponse defines model for ProjectResponse.
 type ProjectResponse struct {
-	ProjectId     *string   `json:"project_id,omitempty"`
-	ProjectName   *string   `json:"project_name,omitempty"`
-	VersionGroups *[]string `json:"version_groups,omitempty"`
-	Versions      *[]string `json:"versions,omitempty"`
+	Project  *Project             `json:"project,omitempty"`
+	Versions *map[string][]string `json:"versions,omitempty"`
 }
 
 // ProjectsResponse defines model for ProjectsResponse.
 type ProjectsResponse struct {
-	Projects *[]string `json:"projects,omitempty"`
+	Projects *[]ProjectResponse `json:"projects,omitempty"`
 }
 
-// VersionBuild defines model for VersionBuild.
-type VersionBuild struct {
-	Build     *int32               `json:"build,omitempty"`
-	Changes   *[]Change            `json:"changes,omitempty"`
-	Channel   *VersionBuildChannel `json:"channel,omitempty"`
-	Downloads *map[string]Download `json:"downloads,omitempty"`
-	Promoted  *bool                `json:"promoted,omitempty"`
-	Time      *time.Time           `json:"time,omitempty"`
+// Support defines model for Support.
+type Support struct {
+	End    *openapi_types.Date `json:"end,omitempty"`
+	Status *SupportStatus      `json:"status,omitempty"`
 }
 
-// VersionBuildChannel defines model for VersionBuild.Channel.
-type VersionBuildChannel string
+// SupportStatus defines model for Support.Status.
+type SupportStatus string
 
-// VersionFamilyBuild defines model for VersionFamilyBuild.
-type VersionFamilyBuild struct {
-	Build     *int32                     `json:"build,omitempty"`
-	Changes   *[]Change                  `json:"changes,omitempty"`
-	Channel   *VersionFamilyBuildChannel `json:"channel,omitempty"`
-	Downloads *map[string]Download       `json:"downloads,omitempty"`
-	Promoted  *bool                      `json:"promoted,omitempty"`
-	Time      *time.Time                 `json:"time,omitempty"`
-	Version   *string                    `json:"version,omitempty"`
-}
-
-// VersionFamilyBuildChannel defines model for VersionFamilyBuild.Channel.
-type VersionFamilyBuildChannel string
-
-// VersionFamilyBuildsResponse defines model for VersionFamilyBuildsResponse.
-type VersionFamilyBuildsResponse struct {
-	Builds       *[]VersionFamilyBuild `json:"builds,omitempty"`
-	ProjectId    *string               `json:"project_id,omitempty"`
-	ProjectName  *string               `json:"project_name,omitempty"`
-	VersionGroup *string               `json:"version_group,omitempty"`
-	Versions     *[]string             `json:"versions,omitempty"`
-}
-
-// VersionFamilyResponse defines model for VersionFamilyResponse.
-type VersionFamilyResponse struct {
-	ProjectId    *string   `json:"project_id,omitempty"`
-	ProjectName  *string   `json:"project_name,omitempty"`
-	VersionGroup *string   `json:"version_group,omitempty"`
-	Versions     *[]string `json:"versions,omitempty"`
+// Version defines model for Version.
+type Version struct {
+	Id      *string  `json:"id,omitempty"`
+	Java    *Java    `json:"java,omitempty"`
+	Support *Support `json:"support,omitempty"`
 }
 
 // VersionResponse defines model for VersionResponse.
 type VersionResponse struct {
-	Builds      *[]int32 `json:"builds,omitempty"`
-	ProjectId   *string  `json:"project_id,omitempty"`
-	ProjectName *string  `json:"project_name,omitempty"`
-	Version     *string  `json:"version,omitempty"`
+	Builds  *[]int32 `json:"builds,omitempty"`
+	Version *Version `json:"version,omitempty"`
 }
+
+// GetBuildsParams defines parameters for GetBuilds.
+type GetBuildsParams struct {
+	// Channel Filter builds by channel
+	Channel *GetBuildsParamsChannel `form:"channel,omitempty" json:"channel,omitempty"`
+}
+
+// GetBuildsParamsChannel defines parameters for GetBuilds.
+type GetBuildsParamsChannel string

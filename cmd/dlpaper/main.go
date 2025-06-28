@@ -22,7 +22,6 @@ func main() {
 	if err != nil {
 		slog.Error("An error found in flags.", slog.Any("error", err))
 		os.Exit(1)
-		return
 	}
 
 	ctx := libs.CreateContext(libs.GetApiServer(), libs.GetProjectName(), libs.GetProjectVersion())
@@ -32,12 +31,11 @@ func main() {
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to format output file.", slog.Any("error", err))
 		os.Exit(1)
-		return
 	}
 
 	slog.InfoContext(ctx, "Checking updates...")
 
-	latestBuildChan := make(chan result[api.VersionBuild], 1)
+	latestBuildChan := make(chan result[api.BuildResponse], 1)
 	defer close(latestBuildChan)
 
 	lastUpdateTimeChan := make(chan result[*time.Time], 1)
@@ -48,67 +46,60 @@ func main() {
 
 	getLastUpdateTime(outputFile, lastUpdateTimeChan)
 
-	var latestBuild api.VersionBuild
-
+	var latestBuild api.BuildResponse
 	select {
 	case r := <-latestBuildChan:
 		if r.err != nil {
 			slog.ErrorContext(ctx, "Failed to get builds.", slog.Any("error", r.err))
 			os.Exit(1)
-			return
 		}
 		latestBuild = r.result
 	case <-latestBuildCtx.Done():
 		slog.InfoContext(ctx, "Failed to get builds due to timeout.", slog.Any("error", ctx.Err()))
 		os.Exit(1)
-		return
 	}
 
 	var lastUpdateTime *time.Time
-
 	select {
 	case r := <-lastUpdateTimeChan:
 		if r.err != nil {
 			slog.ErrorContext(ctx, "Failed to get last update time.", slog.String("file", outputFile), slog.Any("error", r.err))
 			os.Exit(1)
-			return
 		}
 		lastUpdateTime = r.result
 	}
 
-	ctx = libs.PutBuild(ctx, *latestBuild.Build)
-
 	if lastUpdateTime != nil && lastUpdateTime.After(*latestBuild.Time) {
 		slog.InfoContext(ctx, "No updates!")
 		os.Exit(0)
-		return
 	}
 
 	if latestBuild.Downloads == nil {
 		slog.ErrorContext(ctx, "Could not find downloads in the response.")
 		os.Exit(1)
-		return
 	}
 
-	download, ok := (*latestBuild.Downloads)["application"]
+	download, ok := (*latestBuild.Downloads)["server:default"]
 
 	if !ok {
 		slog.ErrorContext(ctx, "Could not find application.")
 		os.Exit(1)
-		return
+	} else if download.Url == nil {
+		slog.ErrorContext(ctx, "Could not find download url.")
+		os.Exit(1)
 	}
 
 	ctx = libs.PutDownloadName(ctx, *download.Name)
-	slog.InfoContext(ctx, "Found a new build.", slog.Int("build", int(*latestBuild.Build)), slog.Time("time", *latestBuild.Time))
+	slog.InfoContext(ctx, "Found a new build.", slog.Int("build", int(*latestBuild.Id)), slog.Time("time", *latestBuild.Time))
 
-	if latestBuild.Changes != nil && 0 < len(*latestBuild.Changes) {
+	if latestBuild.Commits != nil && 0 < len(*latestBuild.Commits) {
 		slog.InfoContext(ctx, "Changes in this build:")
-		for _, change := range *latestBuild.Changes {
-			slog.InfoContext(ctx, fmt.Sprintf("  %s", *change.Summary))
+		for _, change := range *latestBuild.Commits {
+			slog.InfoContext(ctx, fmt.Sprintf("  %s", *change.Message))
 		}
 	}
 
-	expectedHash, err := hex.DecodeString(*download.Sha256)
+	expectedHash, err := hex.DecodeString(*download.Checksums.Sha256)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to convert the given sha256 hash to bytes", slog.Any("error", err))
 		os.Exit(1)
@@ -117,7 +108,7 @@ func main() {
 
 	slog.InfoContext(ctx, fmt.Sprintf("Downloading %s...", *download.Name))
 
-	downloadedHash, err := downloadFile(ctx, outputFile, client)
+	downloadedHash, err := downloadFile(ctx, *download.Url, outputFile, client)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to download the file", slog.Any("error", err))
 		os.Exit(1)
@@ -135,11 +126,11 @@ func main() {
 		return
 	}
 
-	slog.InfoContext(ctx, fmt.Sprintf("Latest %s %s (build %d) has been downloaded to %s!", libs.GetProjectName(), libs.GetProjectVersion(), *latestBuild.Build, outputFile))
+	slog.InfoContext(ctx, fmt.Sprintf("Latest %s %s (build %d) has been downloaded to %s!", libs.GetProjectName(), libs.GetProjectVersion(), *latestBuild.Id, outputFile))
 	os.Exit(0)
 }
 
-func downloadFile(ctx context.Context, outputFile string, client api.Client) (hashBytes []byte, returnErr error) {
+func downloadFile(ctx context.Context, url string, outputFile string, client api.Client) (hashBytes []byte, returnErr error) {
 	dist, err := os.OpenFile(outputFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
@@ -155,7 +146,7 @@ func downloadFile(ctx context.Context, outputFile string, client api.Client) (ha
 
 	hash := sha256.New()
 
-	if err = client.Download(ctx, io.MultiWriter(dist, hash)); err != nil {
+	if err = client.DownloadFile(ctx, url, io.MultiWriter(dist, hash)); err != nil {
 		return nil, errors.Join(errors.New("failed to download a file"), err)
 	}
 
@@ -167,23 +158,17 @@ type result[T any] struct {
 	err    error
 }
 
-func getLatestBuild(ctx context.Context, client api.Client, c chan<- result[api.VersionBuild]) (context.Context, context.CancelFunc) {
+func getLatestBuild(ctx context.Context, client api.Client, c chan<- result[api.BuildResponse]) (context.Context, context.CancelFunc) {
 	timeout, cancel := context.WithTimeout(ctx, time.Duration(15)*time.Second)
 
-	go func(c chan<- result[api.VersionBuild]) {
-		resp, err := client.GetVersionBuilds(timeout)
+	go func(c chan<- result[api.BuildResponse]) {
+		resp, err := client.GetLatestBuild(timeout)
 		if err != nil {
-			c <- result[api.VersionBuild]{err: err}
+			c <- result[api.BuildResponse]{err: err}
 			return
 		}
 
-		builds := *resp.Builds
-		if len(builds) == 0 {
-			c <- result[api.VersionBuild]{err: errors.New("no builds found")}
-			return
-		}
-
-		c <- result[api.VersionBuild]{result: builds[len(builds)-1]}
+		c <- result[api.BuildResponse]{result: resp}
 	}(c)
 
 	return timeout, cancel

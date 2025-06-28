@@ -11,15 +11,13 @@ import (
 )
 
 const (
-	baseUrl     = "{api-server}/v2/projects/{project-name}/versions/{project-version}"
-	buildsUrl   = baseUrl + "/builds"
-	buildUrl    = baseUrl + "/builds/{build}"
-	downloadUrl = buildUrl + "/downloads/{download-name}"
+	baseUrl        = "{api-server}/v3/projects/{project-name}/versions/{project-version}"
+	latestBuildUrl = baseUrl + "/builds/latest"
 )
 
 type Client interface {
-	GetVersionBuilds(ctx context.Context) (BuildsResponse, error)
-	Download(ctx context.Context, writer io.Writer) error
+	GetLatestBuild(ctx context.Context) (BuildResponse, error)
+	DownloadFile(ctx context.Context, url string, writer io.Writer) error
 }
 
 func NewClient(server string) Client {
@@ -30,29 +28,22 @@ type client struct {
 	server string
 }
 
-func (c client) GetVersionBuilds(ctx context.Context) (BuildsResponse, error) {
-	url, err := libs.FormatString(ctx, buildsUrl, libs.ApiServerKey, libs.ProjectNameKey, libs.ProjectVersionKey)
-
+func (c client) GetLatestBuild(ctx context.Context) (BuildResponse, error) {
+	url, err := libs.FormatString(ctx, latestBuildUrl, libs.ApiServerKey, libs.ProjectNameKey, libs.ProjectVersionKey)
 	if err != nil {
-		return BuildsResponse{}, err
+		return BuildResponse{}, err
 	}
 
-	var response BuildsResponse
-	if err := getAndDecode(url, &response); err != nil {
-		return BuildsResponse{}, err
+	var response BuildResponse
+	if err := getAndDecode(ctx, url, &response); err != nil {
+		return BuildResponse{}, err
 	}
 
 	return response, nil
 }
 
-func (c client) Download(ctx context.Context, writer io.Writer) error {
-	url, err := libs.FormatString(ctx, downloadUrl, libs.ApiServerKey, libs.ProjectNameKey, libs.ProjectVersionKey, libs.BuildKey, libs.DownloadNameKey)
-
-	if err != nil {
-		return err
-	}
-
-	return get(url, func(body io.ReadCloser) error {
+func (c client) DownloadFile(ctx context.Context, url string, writer io.Writer) error {
+	return get(ctx, url, func(body io.ReadCloser) error {
 		if _, err := io.Copy(writer, body); err != nil {
 			return err
 		}
@@ -60,8 +51,15 @@ func (c client) Download(ctx context.Context, writer io.Writer) error {
 	})
 }
 
-func get(url string, bodyProcessor func(body io.ReadCloser) error) (returnErr error) {
-	resp, err := http.Get(url)
+func get(ctx context.Context, url string, bodyProcessor func(body io.ReadCloser) error) (returnErr error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("User-Agent", "dlpaper (compatible; +https://github.com/Siroshun09/dlpaper)")
+
+	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
 		return err
@@ -87,8 +85,8 @@ func get(url string, bodyProcessor func(body io.ReadCloser) error) (returnErr er
 	return nil
 }
 
-func getAndDecode[T any](url string, response *T) error {
-	return get(url, func(body io.ReadCloser) error {
+func getAndDecode[T any](ctx context.Context, url string, response *T) error {
+	return get(ctx, url, func(body io.ReadCloser) error {
 		if err := json.NewDecoder(body).Decode(response); err != nil {
 			return err
 		}

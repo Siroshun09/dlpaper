@@ -12,7 +12,7 @@ const (
 	FilenameFormatFlag = "filename-format"
 )
 
-var apiServer = "https://api.papermc.io"
+var apiServer = "https://fill.papermc.io"
 var projectName = ""
 var projectVersion = ""
 var filenameFormat = "{project-name}-{project-version}.jar"
