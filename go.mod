@@ -4,7 +4,7 @@ go 1.24.3
 
 tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 
-require github.com/oapi-codegen/runtime v1.1.1
+require github.com/oapi-codegen/runtime v1.1.2
 
 require (
 	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect
