@@ -2,4 +2,4 @@
 package: api
 generate:
   models: true
-output: api.gen.go
+output: ../../api/api.gen.go
