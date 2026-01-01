@@ -60,7 +60,12 @@ func get(ctx context.Context, url string, bodyProcessor func(body io.ReadCloser)
 	req.Header.Set("User-Agent", "dlpaper (compatible; +https://github.com/Siroshun09/dlpaper)")
 
 	resp, err := http.DefaultClient.Do(req)
-
+	defer func() {
+		closeErr := resp.Body.Close()
+		if err != nil {
+			returnErr = errors.Join(returnErr, closeErr)
+		}
+	}()
 	if err != nil {
 		return err
 	}
@@ -69,16 +74,7 @@ func get(ctx context.Context, url string, bodyProcessor func(body io.ReadCloser)
 		return errors.New(resp.Status)
 	}
 
-	body := resp.Body
-
-	defer func(body io.ReadCloser) {
-		err := body.Close()
-		if err != nil {
-			returnErr = errors.Join(returnErr, err)
-		}
-	}(body)
-
-	if err = bodyProcessor(body); err != nil {
+	if err = bodyProcessor(resp.Body); err != nil {
 		return err
 	}
 
