@@ -60,14 +60,12 @@ func main() {
 	}
 
 	var lastUpdateTime *time.Time
-	select {
-	case r := <-lastUpdateTimeChan:
-		if r.err != nil {
-			slog.ErrorContext(ctx, "Failed to get last update time.", slog.String("file", outputFile), slog.Any("error", r.err))
-			os.Exit(1)
-		}
-		lastUpdateTime = r.result
+	r := <-lastUpdateTimeChan
+	if r.err != nil {
+		slog.ErrorContext(ctx, "Failed to get last update time.", slog.String("file", outputFile), slog.Any("error", r.err))
+		os.Exit(1)
 	}
+	lastUpdateTime = r.result
 
 	if lastUpdateTime != nil && lastUpdateTime.After(*latestBuild.Time) {
 		slog.InfoContext(ctx, "No updates!")
