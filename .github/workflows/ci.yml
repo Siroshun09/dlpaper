@@ -2,24 +2,21 @@ name: Go Build
 on: [ push, pull_request ]
 
 jobs:
-  build-ubuntu:
+  test:
+    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-test.yml@v1
+  lint:
+    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-lint.yml@v1
+  build:
+    needs: [ test, lint ]
+    strategy:
+      matrix:
+        target_os: [ linux, darwin, windows ]
+        target_arch: [ amd64, arm64 ]
+      fail-fast: false
     uses: Siroshun09/gh-actions-workflows/.github/workflows/go-build.yml@v1
     with:
-      os: ubuntu-latest
-      package-name: dlpaper-${{ github.run_number }}
+      target-os: ${{ matrix.target_os }}
+      target-arch: ${{ matrix.target_arch }}
       go-filepath: "./cmd/dlpaper/main.go"
-      output-filepath: "dist/dlpaper"
-  build-macos:
-    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-build.yml@v1
-    with:
-      os: macos-latest
+      binary-name: dlpaper
       package-name: dlpaper-${{ github.run_number }}
-      go-filepath: "./cmd/dlpaper/main.go"
-      output-filepath: "dist/dlpaper"
-  build-windows:
-    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-build.yml@v1
-    with:
-      os: windows-latest
-      package-name: dlpaper-${{ github.run_number }}
-      go-filepath: "./cmd/dlpaper/main.go"
-      output-filepath: "dist/dlpaper.exe"

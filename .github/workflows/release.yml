@@ -1,13 +1,21 @@
 name: Go Release
 on:
-  push:
-    # run only against tags
-    tags:
-      - '*'
+  release:
+    types: [ published ]
 permissions:
   contents: write
 
 jobs:
-  build:
-    if: github.event.base_ref == 'refs/heads/main'
-    uses: Siroshun09/gh-actions-workflows/.github/workflows/goreleaser-release.yml@v1
+  release:
+    strategy:
+      matrix:
+        target_os: [ linux, darwin, windows ]
+        target_arch: [ amd64, arm64 ]
+      fail-fast: false
+    uses: Siroshun09/gh-actions-workflows/.github/workflows/go-release.yml@v1
+    with:
+      target-os: ${{ matrix.target_os }}
+      target-arch: ${{ matrix.target_arch }}
+      go-filepath: "./cmd/dlpaper/main.go"
+      binary-name: dlpaper
+      tag-name: ${{ github.event.release.tag_name }}
