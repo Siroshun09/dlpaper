@@ -3,16 +3,20 @@ package libs
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
+type contextKey string
+
+func (k contextKey) String() string {
+	return string(k)
+}
+
 const (
-	ApiServerKey      = "api-server"
-	ProjectNameKey    = "project-name"
-	ProjectVersionKey = "project-version"
-	BuildKey          = "build"
-	DownloadNameKey   = "download-name"
+	ApiServerKey      contextKey = "api-server"
+	ProjectNameKey    contextKey = "project-name"
+	ProjectVersionKey contextKey = "project-version"
+	DownloadNameKey   contextKey = "download-name"
 )
 
 func CreateContext(apiServer string, name string, version string) context.Context {
@@ -24,21 +28,17 @@ func CreateContext(apiServer string, name string, version string) context.Contex
 	return ctx
 }
 
-func PutBuild(ctx context.Context, build int32) context.Context {
-	return context.WithValue(ctx, BuildKey, strconv.Itoa(int(build)))
-}
-
 func PutDownloadName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, DownloadNameKey, name)
 }
 
-func FormatString(ctx context.Context, str string, keys ...string) (string, error) {
+func FormatString(ctx context.Context, str string, keys ...contextKey) (string, error) {
 	result := str
 
 	for _, key := range keys {
 		v := ctx.Value(key)
 		if v != nil {
-			result = strings.Replace(result, "{"+key+"}", v.(string), -1)
+			result = strings.ReplaceAll(result, "{"+key.String()+"}", v.(string))
 		} else {
 			return "", fmt.Errorf("the key '%s' does not exist in the context", key)
 		}
